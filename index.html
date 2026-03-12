@@ -1,340 +1,823 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Flappy Puj</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flappy Pujesh</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;700&display=swap');
 
-        body { 
-            margin: 0; 
-            overflow: hidden; 
-            background: #0f172a; 
-            font-family: 'Quicksand', sans-serif; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh;
-            touch-action: manipulation; /* Prevents zooming on fast taps */
-        }
+:root {
+  --pink: #ec4899;
+  --pink-dark: #be185d;
+  --indigo: #6366f1;
+  --indigo-dark: #4338ca;
+  --slate: #1e293b;
+  --cream: #fef9f0;
+}
 
-        #game-container {
-            position: relative;
-            box-shadow: 0 50px 100px rgba(0,0,0,0.9);
-            border-radius: 20px;
-            overflow: hidden;
-            border: 8px solid #ffffff10;
-            /* Mobile scaling logic */
-            width: 100vw;
-            max-width: 1200px;
-            aspect-ratio: 1200 / 800;
-        }
+* { margin:0; padding:0; box-sizing:border-box; }
 
-        #bg-layer {
-            position: absolute;
-            top: 0; left: 0; width: 200%; height: 100%;
-            background-image: url('Pics/background.jpg');
-            background-repeat: repeat-x;
-            background-size: 50% 100%;
-            filter: blur(12px) saturate(0.6) contrast(0.8) brightness(0.9);
-            z-index: 0;
-        }
+body {
+  overflow: hidden;
+  background: #0a0a1a;
+  font-family: 'Quicksand', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
 
-        canvas { 
-            position: absolute; 
-            top: 0; left: 0; 
-            display: block; 
-            z-index: 1; 
-            width: 100%; /* Scales canvas to container */
-            height: 100%;
-        }
+#game-container {
+  position: relative;
+  border-radius: 28px;
+  overflow: hidden;
+  border: 3px solid rgba(255,255,255,0.08);
+  box-shadow: 0 40px 120px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  width: 1200px;
+  height: 800px;
+}
 
-        #white-out {
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: white; opacity: 0; z-index: 5;
-            pointer-events: none; transition: opacity 0.8s ease-in-out;
-        }
+/* Parallax background layers */
+#bg-far {
+  position: absolute; top:0; left:0;
+  width: 2400px; height: 800px;
+  background: linear-gradient(180deg, #1a0533 0%, #2d1b6e 35%, #1a3a6e 70%, #0d2744 100%);
+  z-index: 0;
+}
+#bg-stars {
+  position: absolute; top:0; left:0;
+  width: 2400px; height: 600px;
+  z-index: 1; pointer-events: none;
+}
+#bg-mid {
+  position: absolute; bottom: 0; left: 0;
+  width: 2400px; height: 200px;
+  background: linear-gradient(180deg, transparent 0%, #0f2a1a 50%, #0a1f12 100%);
+  z-index: 2;
+}
+#bg-layer {
+  position: absolute; top:0; left:0;
+  width: 2400px; height: 800px;
+  background-image: url('Pics/background.jpg');
+  background-repeat: repeat-x;
+  background-size: 1200px 800px;
+  opacity: 0.18;
+  z-index: 3;
+  filter: blur(7px);
+}
 
-        #ui { 
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            display: flex; justify-content: center; align-items: center; 
-            z-index: 10; pointer-events: none;
-        }
+canvas { position:absolute; top:0; left:0; display:block; z-index:4; }
 
-        .menu-box { 
-            background: rgba(255, 255, 255, 0.98); 
-            padding: 30px; border-radius: 30px; pointer-events: auto; 
-            text-align: center; border: 2px solid #fce7f3; color: #1e293b;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-            width: 80%;
-            max-width: 500px;
-        }
+#white-out {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(circle at center, #fff 0%, #fce7f3 100%);
+  opacity:0; z-index:8; pointer-events:none;
+  transition: opacity 0.9s ease-in-out;
+}
 
-        .btn-container { display: flex; flex-direction: column; gap: 12px; align-items: center; margin-top: 15px; }
+/* Vignette overlay */
+#vignette {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.55) 100%);
+  z-index:5; pointer-events:none;
+}
 
-        button { 
-            padding: 15px 25px; font-size: 18px; cursor: pointer; background: #ec4899; 
-            color: white; border: none; border-radius: 100px; font-weight: 700; 
-            box-shadow: 0 5px 0 #be185d; transition: 0.1s; font-family: 'Quicksand', sans-serif;
-            width: 100%;
-        }
+#ui {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; justify-content:center; align-items:center;
+  z-index:10; pointer-events:none;
+}
 
-        button.alt { background: #6366f1; box-shadow: 0 5px 0 #4338ca; }
-        button:active { transform: translateY(3px); box-shadow: 0 2px 0 #be185d; }
+.menu-box {
+  background: rgba(255,255,255,0.97);
+  padding: 52px 60px 44px;
+  border-radius: 40px;
+  pointer-events: auto;
+  text-align: center;
+  color: var(--slate);
+  box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 2px rgba(236,72,153,0.15) inset;
+  min-width: 480px;
+  position: relative;
+  overflow: hidden;
+}
 
-        h1 { margin: 0; font-size: clamp(30px, 8vw, 55px); color: #db2777; }
-        p { color: #64748b; font-size: clamp(14px, 4vw, 20px); margin: 10px 0; line-height: 1.4; }
-    </style>
+.menu-box::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 5px;
+  background: linear-gradient(90deg, var(--pink), var(--indigo), var(--pink));
+  background-size: 200%;
+  animation: shimmer 3s linear infinite;
+}
+
+@keyframes shimmer { 0%{background-position:0%} 100%{background-position:200%} }
+
+h1 {
+  font-family: 'Baloo 2', cursive;
+  margin: 0 0 6px;
+  font-size: 58px;
+  font-weight: 800;
+  color: var(--pink);
+  text-shadow: 0 4px 0 rgba(236,72,153,0.2);
+  line-height: 1;
+  letter-spacing: -1px;
+}
+
+.menu-emoji { font-size: 52px; display:block; margin-bottom: 10px; animation: floatEmoji 2s ease-in-out infinite; }
+@keyframes floatEmoji { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-8px) rotate(5deg)} }
+
+p { color: #64748b; font-size: 18px; margin: 8px 0 20px; line-height: 1.5; }
+p em { color: var(--pink-dark); font-style:italic; font-weight:700; }
+
+.btn-container { display:flex; flex-direction:column; gap:12px; align-items:center; margin-top:16px; }
+
+button {
+  padding: 16px 36px; font-size: 20px; cursor:pointer;
+  background: var(--pink); color:white; border:none;
+  border-radius: 100px; font-weight:700;
+  box-shadow: 0 6px 0 var(--pink-dark);
+  transition: transform 0.1s, box-shadow 0.1s;
+  font-family: 'Quicksand', sans-serif;
+  width: 90%; letter-spacing: 0.3px;
+}
+button.alt { background: var(--indigo); box-shadow: 0 6px 0 var(--indigo-dark); }
+button:hover { transform: translateY(-2px); filter: brightness(1.08); }
+button:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--pink-dark); }
+button.alt:active { box-shadow: 0 2px 0 var(--indigo-dark); }
+
+.hint-row {
+  display: flex; gap: 20px; justify-content: center;
+  margin-top: 18px; flex-wrap: wrap;
+}
+.hint-pill {
+  background: rgba(99,102,241,0.08);
+  border: 1.5px solid rgba(99,102,241,0.2);
+  border-radius: 30px; padding: 6px 16px;
+  font-size: 13px; color: #6366f1; font-weight: 700;
+}
+
+.score-big {
+  font-family: 'Baloo 2', cursive;
+  font-size: 88px; 
+  font-weight: 800; 
+  line-height: 1;
+  background: linear-gradient(135deg, var(--pink), var(--indigo));
+  /* Added standard version first to help the editor */
+  background-clip: text;
+  -webkit-background-clip: text; 
+  -webkit-text-fill-color: transparent;
+  display: block; 
+  margin: 12px 0;
+}
+</style>
 </head>
 <body>
 
-    <div id="game-container">
-        <div id="bg-layer"></div>
-        <div id="white-out"></div>
-        <div id="ui">
-            <div class="menu-box" id="menu-content">
-                <h1 id="ui-title">Flappy Puj</h1>
-                <p id="ui-desc">Rescue your love from the castle cage!</p>
-                <div class="btn-container" id="ui-btns">
-                    <button onclick="startGame()">Start Adventure</button>
-                </div>
-            </div>
-        </div>
-        <canvas id="gameCanvas"></canvas>
+<div id="game-container">
+  <div id="bg-far"></div>
+  <canvas id="starCanvas" width="2400" height="600" style="position:absolute;top:0;left:0;z-index:1;pointer-events:none;"></canvas>
+  <div id="bg-layer"></div>
+  <div id="bg-mid"></div>
+  <div id="white-out"></div>
+  <div id="vignette"></div>
+
+  <div id="ui">
+    <div class="menu-box" id="menu-content">
+      <span class="menu-emoji" id="ui-emoji">🐦</span>
+      <h1 id="ui-title">Flappy Pujesh</h1>
+      <p id="ui-desc">You better be playing this on your laptop<br><em>Reach the end, Byeaatchhh</em></p>
+      <div class="btn-container" id="ui-btns">
+        <button onclick="startGame()">Shuru Maadana 🚀</button>
+      </div>
+      <div class="hint-row" id="ui-hints">
+        <span class="hint-pill">SPACE to flap</span>
+        <span class="hint-pill">chicken wings = Slower</span>
+        <span class="hint-pill">Dictionary = Faster</span>
+        <span class="hint-pill">2 Lives</span>
+      </div>
     </div>
+  </div>
+
+  <canvas id="gameCanvas" width="1200" height="800"></canvas>
+</div>
 
 <script>
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const whiteOut = document.getElementById('white-out');
-const bgLayer = document.getElementById('bg-layer');
-const uiContainer = document.getElementById('ui');
-const uiTitle = document.getElementById('ui-title');
-const uiDesc = document.getElementById('ui-desc');
-const uiBtns = document.getElementById('ui-btns');
+// ── Canvases ───────────────────────────────────────────────────────
+const canvas   = document.getElementById('gameCanvas');
+const ctx      = canvas.getContext('2d');
+const starCvs  = document.getElementById('starCanvas');
+const starCtx  = starCvs.getContext('2d');
+const W = 1200, H = 800;
 
-// Logical resolution stays 1200x800 for the physics engine
-canvas.width = 1200;
-canvas.height = 800;
+const whiteOut  = document.getElementById('white-out');
+const bgLayer   = document.getElementById('bg-layer');
+const bgFar     = document.getElementById('bg-far');
+const uiEl      = document.getElementById('ui');
+const uiTitle   = document.getElementById('ui-title');
+const uiDesc    = document.getElementById('ui-desc');
+const uiBtns    = document.getElementById('ui-btns');
+const uiEmoji   = document.getElementById('ui-emoji');
+const uiHints   = document.getElementById('ui-hints');
 
-const images = {};
-const src = {
-    normal: 'Pics/pujnormal.png', happy: 'Pics/pujhappy.png', sad: 'Pics/pujsad.png',
-    food: 'Pics/food1.png', obstacle: 'Pics/obstacle.png', partner: 'Pics/ach.png'
-};
+// ── Images ─────────────────────────────────────────────────────────
+// ── Images (FIXED) ─────────────────────────────────────────────────
+const Img = {};
+['normal','happy','sad','food','obstacle','partner'].forEach(k => {
+  Img[k] = new Image();
+  if (k === 'partner') {
+    Img[k].src = 'Pics/ach.png';
+  } else if (k === 'food') {
+    Img[k].src = 'Pics/food1.png';
+  } else if (k === 'obstacle') {
+    Img[k].src = 'Pics/obstacle.png';
+  } else {
+    // This adds the "puj" prefix for normal, happy, and sad
+    Img[k].src = `Pics/puj${k}.png`; 
+  }
+});
 
-for (let key in src) {
-    images[key] = new Image();
-    images[key].src = src[key];
+// ── Stars (drawn once) ─────────────────────────────────────────────
+(function drawStars() {
+  starCtx.clearRect(0,0,2400,600);
+  for (let i=0;i<320;i++) {
+    const x=Math.random()*2400, y=Math.random()*580;
+    const r=Math.random()*1.6+0.3;
+    const a=Math.random()*0.7+0.2;
+    starCtx.fillStyle=`rgba(255,255,255,${a})`;
+    starCtx.beginPath(); starCtx.arc(x,y,r,0,Math.PI*2); starCtx.fill();
+  }
+  // nebula wisps
+  for (let i=0;i<5;i++) {
+    const gx=Math.random()*2400, gy=Math.random()*400;
+    const g=starCtx.createRadialGradient(gx,gy,0,gx,gy,180);
+    const cols=['rgba(147,51,234,','rgba(236,72,153,','rgba(99,102,241,','rgba(16,185,129,','rgba(59,130,246,'];
+    const col=cols[i%cols.length];
+    g.addColorStop(0,col+'0.07)'); g.addColorStop(1,col+'0)');
+    starCtx.fillStyle=g;
+    starCtx.fillRect(gx-180,gy-180,360,360);
+  }
+})();
+
+// ── Particles ──────────────────────────────────────────────────────
+const particles = [];
+function spawnParticles(x, y, col, count=12) {
+  for (let i=0;i<count;i++) {
+    const angle = Math.random()*Math.PI*2;
+    const spd   = 1.5 + Math.random()*4;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle)*spd, vy: Math.sin(angle)*spd - 2,
+      life: 1, decay: 0.022 + Math.random()*0.02,
+      r: 3 + Math.random()*6,
+      col, shape: Math.random()<0.5 ? 'circle' : 'star'
+    });
+  }
+}
+function spawnHearts(x,y,count=6) {
+  for (let i=0;i<count;i++) {
+    particles.push({
+      x, y,
+      vx: (Math.random()-0.5)*3, vy: -1.5-Math.random()*2,
+      life:1, decay:0.015+Math.random()*0.01,
+      r:10+Math.random()*8,
+      col:'#ec4899', shape:'heart'
+    });
+  }
+}
+function updateParticles() {
+  for (let i=particles.length-1;i>=0;i--) {
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.08;
+    p.life-=p.decay;
+    if(p.life<=0) { particles.splice(i,1); continue; }
+    ctx.globalAlpha=p.life;
+    ctx.fillStyle=p.col;
+    if(p.shape==='circle') {
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    } else if(p.shape==='star') {
+      drawStar(ctx,p.x,p.y,4,p.r,p.r*0.4);
+    } else if(p.shape==='heart') {
+      ctx.font=`${p.r*2}px serif`; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('💙',p.x,p.y);
+    }
+    ctx.globalAlpha=1;
+  }
+}
+function drawStar(c,cx,cy,spikes,outerR,innerR) {
+  let rot=Math.PI/2*3, x=cx, y=cy, step=Math.PI/spikes;
+  c.beginPath(); c.moveTo(cx,cy-outerR);
+  for(let i=0;i<spikes;i++) {
+    x=cx+Math.cos(rot)*outerR; y=cy+Math.sin(rot)*outerR; c.lineTo(x,y); rot+=step;
+    x=cx+Math.cos(rot)*innerR; y=cy+Math.sin(rot)*innerR; c.lineTo(x,y); rot+=step;
+  }
+  c.lineTo(cx,cy-outerR); c.closePath(); c.fill();
 }
 
-let bird, partner, pipes, items, frame, score, gameRunning, gameSpeed, lives, invincibilityTimer, state, bgX, wobble, effectTimer;
-let animationId;
+// ── Screen shake ───────────────────────────────────────────────────
+let shakeAmt=0, shakeX=0, shakeY=0;
+function shake(amt) { shakeAmt=amt; }
+function updateShake() {
+  if(shakeAmt>0.5) {
+    shakeX=(Math.random()-0.5)*shakeAmt;
+    shakeY=(Math.random()-0.5)*shakeAmt;
+    shakeAmt*=0.82;
+  } else { shakeX=0; shakeY=0; shakeAmt=0; }
+}
+
+// ── Pipe colours per pillar ────────────────────────────────────────
+const PIPE_THEMES = [
+  { body:'#166534', cap:'#15803d', glow:'rgba(34,197,94,0.4)',   shadow:'#052e16' },
+  { body:'#1d4ed8', cap:'#2563eb', glow:'rgba(99,162,255,0.4)',  shadow:'#1e3a8a' },
+  { body:'#7c3aed', cap:'#8b5cf6', glow:'rgba(167,139,250,0.4)', shadow:'#4c1d95' },
+  { body:'#b45309', cap:'#d97706', glow:'rgba(251,191,36,0.4)',  shadow:'#78350f' },
+  { body:'#0f766e', cap:'#14b8a6', glow:'rgba(45,212,191,0.4)', shadow:'#134e4a' },
+  { body:'#9d174d', cap:'#db2777', glow:'rgba(236,72,153,0.4)',  shadow:'#500724' },
+  { body:'#1e3a5f', cap:'#0ea5e9', glow:'rgba(56,189,248,0.4)', shadow:'#0c1a2e' },
+  { body:'#3b1f0e', cap:'#92400e', glow:'rgba(180,83,9,0.4)',   shadow:'#1c0a05' },
+  { body:'#1a1a2e', cap:'#374151', glow:'rgba(156,163,175,0.4)',shadow:'#111827' },
+  { body:'#14532d', cap:'#16a34a', glow:'rgba(74,222,128,0.4)', shadow:'#052e16' },
+  { body:'#312e81', cap:'#4f46e5', glow:'rgba(129,140,248,0.4)',shadow:'#1e1b4b' },
+  { body:'#7f1d1d', cap:'#dc2626', glow:'rgba(248,113,113,0.4)',shadow:'#450a0a' },
+  { body:'#0c4a6e', cap:'#0369a1', glow:'rgba(56,189,248,0.4)', shadow:'#082f49' },
+  { body:'#4a044e', cap:'#9333ea', glow:'rgba(192,132,252,0.4)',shadow:'#2e1065' },
+  { body:'#064e3b', cap:'#059669', glow:'rgba(52,211,153,0.4)', shadow:'#022c22' },
+];
+
+// ── Game state ─────────────────────────────────────────────────────
+let bird, partner, pipes, items, frame, score, gameRunning;
+let gameSpeed, lives, invincTimer, state, bgX, bgXMid, effectTimer, animId;
+let comboFlash = 0;
+let flashCol = '';
 
 function init() {
-    bird = { x: 200, y: 400, w: 90, h: 90, velocity: 0, state: 'normal', angle: 0 };
-    partner = { x: 1400, y: 350, w: 95, h: 95, isCaged: true, castleY: 450 };
-    pipes = [];
-    items = [];
-    frame = 0;
-    score = 0;
-    lives = 2;
-    invincibilityTimer = 0;
-    gameSpeed = 1.7;
-    bgX = 0;
-    wobble = 0;
-    effectTimer = 0;
-    state = 'playing';
-    gameRunning = true;
-    whiteOut.style.opacity = "0";
-    uiContainer.style.display = 'none';
+  bird = { x:200, y:H/2, w:88, h:88, vel:0, state:'normal', angle:0, wobble:0, trail:[] };
+  partner = { x:W+500, y:340, w:92, h:92, isCaged:true };
+  pipes = [];
+  items = [];
+  frame=0; score=0; lives=2; invincTimer=0;
+  gameSpeed=3.0; bgX=0; bgXMid=0; effectTimer=0;
+  state='playing'; gameRunning=true;
+  shakeAmt=0; particles.length=0; comboFlash=0;
+  whiteOut.style.opacity='0';
+  uiEl.style.display='none';
 }
 
 function startGame() {
-    if (animationId) cancelAnimationFrame(animationId);
-    init();
-    animate();
+  if(animId) cancelAnimationFrame(animId);
+  init(); animate();
 }
 
 function closeGame() {
-    uiTitle.innerText = "❤️";
-    uiDesc.innerText = "Go give him a call! :)";
-    uiBtns.innerHTML = "";
+  uiEmoji.textContent='📞';
+  uiTitle.innerText='Go call him!';
+  uiDesc.innerHTML='(If he is already on the call, the scem)';
+  uiBtns.innerHTML='';
+  uiHints.innerHTML='';
 }
 
+// ── Collision / effects ────────────────────────────────────────────
 function handleCollision() {
-    if (invincibilityTimer > 0 || state !== 'playing') return;
-    lives--;
-    bird.state = 'sad';
-    if (lives <= 0) {
-        gameRunning = false;
-        uiTitle.innerText = "FAILED";
-        uiDesc.innerText = '"che che che, big waste only"';
-        uiBtns.innerHTML = `<button onclick="startGame()">Try Again</button>`;
-        uiContainer.style.display = 'flex';
-    } else {
-        invincibilityTimer = 100;
-    }
+  if(invincTimer>0 || state!=='playing') return;
+  lives--;
+  bird.state='sad';
+  shake(14);
+  spawnParticles(bird.x+bird.w/2, bird.y+bird.h/2, '#ff5252', 18);
+  if(lives<=0) {
+    gameRunning=false;
+    showMenu('💀','FAILED!','"che che che, big waste only"',
+      `<button onclick="startGame()">Matthome try maadi 💪</button>`
+    );
+  } else {
+    invincTimer=120;
+  }
 }
 
-// TOUCH & KEYBOARD LOGIC
-function triggerJump(e) {
-    if (e) e.preventDefault();
-    if (gameRunning && state === 'playing') {
-        bird.velocity = -4.8;
-        wobble = 15;
-    }
+function showMenu(emoji,title,desc,btns,hints='') {
+  uiEmoji.textContent=emoji;
+  uiTitle.innerText=title;
+  uiDesc.innerHTML=desc;
+  uiBtns.innerHTML=btns;
+  uiHints.innerHTML=hints;
+  uiEl.style.display='flex';
 }
 
-window.addEventListener('keydown', (e) => { if (e.code === 'Space') triggerJump(e); });
-canvas.addEventListener('touchstart', (e) => triggerJump(e), { passive: false });
+// ── Input ──────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if(e.code==='Space') {
+    e.preventDefault();
+    if(gameRunning && state==='playing') {
+      bird.vel=-5.2;
+      bird.wobble=18;
+      spawnParticles(bird.x+10, bird.y+bird.h/2, 'rgba(255,255,255,0.5)', 4);
+    }
+  }
+});
+document.getElementById('gameCanvas').addEventListener('mousedown', () => {
+  if(gameRunning && state==='playing') {
+    bird.vel=-5.2; bird.wobble=18;
+    spawnParticles(bird.x+10, bird.y+bird.h/2, 'rgba(255,255,255,0.5)', 4);
+  }
+});
 
+// ── Castle ─────────────────────────────────────────────────────────
 function drawCastle(x, y) {
-    ctx.fillStyle = "#475569";
-    ctx.fillRect(x, y, 300, 400);
-    ctx.fillRect(x - 20, y, 40, 60);
-    ctx.fillRect(x + 280, y, 40, 60);
-    ctx.fillStyle = "#1e293b";
-    ctx.fillRect(x + 50, y + 100, 40, 60);
-    ctx.fillRect(x + 210, y + 100, 40, 60);
+  const g=ctx.createLinearGradient(x,y,x,y+420);
+  g.addColorStop(0,'#374151'); g.addColorStop(1,'#1f2937');
+  ctx.fillStyle=g;
+  // battlements
+  const battW=50, battH=55, battCount=6;
+  for(let i=0;i<battCount;i++) {
+    if(i%2===0) { ctx.fillRect(x-15+i*battW, y-battH+8, battW, battH); }
+  }
+  ctx.fillRect(x-15,y,300+30,420);
+  // towers
+  ctx.fillStyle='#4b5563';
+  ctx.fillRect(x-50,y-30,60,460); ctx.fillRect(x+260,y-30,60,460);
+  // tower battlements
+  ['#4b5563','#374151'].forEach((c,ti)=>{
+    const tx=ti===0?x-50:x+260;
+    for(let i=0;i<4;i++) { if(i%2===0){ ctx.fillStyle=c; ctx.fillRect(tx+i*16,y-54,14,28); } }
+  });
+  // windows
+  ctx.fillStyle='rgba(250,200,80,0.9)';
+  [[40,100],[200,100],[40,230],[200,230]].forEach(([ox,oy])=>{
+    ctx.beginPath(); ctx.arc(x+ox+20,y+oy,16,Math.PI,0,false); ctx.fillRect(x+ox,y+oy,40,35); ctx.fill();
+    // glow
+    const wg=ctx.createRadialGradient(x+ox+20,y+oy+10,0,x+ox+20,y+oy+10,40);
+    wg.addColorStop(0,'rgba(250,200,80,0.25)'); wg.addColorStop(1,'rgba(250,200,80,0)');
+    ctx.fillStyle=wg; ctx.fillRect(x+ox-20,y+oy-20,80,80);
+  });
+  // door
+  ctx.fillStyle='#1f2937';
+  ctx.beginPath(); ctx.arc(x+130,y+300,35,Math.PI,0,false); ctx.fillRect(x+95,y+300,70,120); ctx.fill();
+  // flag
+  ctx.strokeStyle='#6b7280'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x+140,y-60); ctx.lineTo(x+140,y-10); ctx.stroke();
+  ctx.fillStyle='#ec4899';
+  ctx.beginPath(); ctx.moveTo(x+140,y-60); ctx.lineTo(x+170,y-48); ctx.lineTo(x+140,y-36); ctx.fill();
 }
 
-function update() {
-    if (!gameRunning && state === 'playing') return;
+// ── Pipe draw ──────────────────────────────────────────────────────
+function drawPipe(p, idx) {
+  const th   = PIPE_THEMES[idx % PIPE_THEMES.length];
+  const botY = p.top + p.gap;
+  const botH = H - botY;
+  const pw   = 100, capW=120, capH=24, capOff=10;
 
-    if (state === 'playing') {
-        bgX -= (gameSpeed * 0.7);
-        if (bgX <= -1200) bgX = 0;
-        bgLayer.style.transform = `translateX(${bgX}px)`;
-    }
+  // glow
+  ctx.shadowColor=th.glow; ctx.shadowBlur=20;
 
-    if (wobble > 0) {
-        bird.angle = Math.sin(frame * 0.5) * (wobble * 0.05);
-        wobble *= 0.9; 
-    } else { bird.angle = 0; }
+  function pillar(x,y,w,h) {
+    if(h<=0){ctx.shadowBlur=0;return;}
+    const g=ctx.createLinearGradient(x,0,x+w,0);
+    g.addColorStop(0,th.shadow); g.addColorStop(0.3,th.body);
+    g.addColorStop(0.65,'rgba(255,255,255,0.12)'); g.addColorStop(1,th.shadow);
+    ctx.fillStyle=g; ctx.fillRect(x,y,w,h);
+    ctx.fillStyle='rgba(255,255,255,0.08)'; ctx.fillRect(x+8,y,10,h);
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.fillRect(x+w-10,y,10,h);
+  }
+  function cap(x,y,w,h,radii) {
+    const g=ctx.createLinearGradient(x,0,x+w,0);
+    g.addColorStop(0,th.shadow); g.addColorStop(0.4,th.cap);
+    g.addColorStop(1,th.shadow);
+    ctx.fillStyle=g;
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,radii); ctx.fill();
+  }
 
-    if (state === 'playing') {
-        bird.velocity += 0.16;
-        bird.y += bird.velocity;
-        
-        if (invincibilityTimer > 0) invincibilityTimer--;
-        if (effectTimer > 0) {
-            effectTimer--;
-            if (effectTimer <= 0) { bird.state = 'normal'; gameSpeed = 1.7; }
-        }
+  const px = p.x;
+  // top
+  pillar(px,0,pw, p.top-capH);
+  cap(px-capOff, p.top-capH, capW, capH, [0,0,8,8]);
+  // bottom
+  cap(px-capOff, botY, capW, capH, [8,8,0,0]);
+  pillar(px, botY+capH, pw, botH-capH);
 
-        if (bird.y + bird.h > canvas.height || bird.y < 0) handleCollision();
+  ctx.shadowBlur=0;
 
-        if (score + pipes.length < 15 && frame % 280 === 0) {
-            pipes.push({ x: canvas.width, top: Math.random() * 300 + 100, gap: 270, passed: false });
-        }
-
-        if (frame % 180 === 0) {
-            items.push({ x: Math.random() * 800 + 200, y: -100, type: Math.random() > 0.5 ? 'food' : 'obstacle', w: 70, h: 70 });
-        }
-
-        pipes.forEach(p => {
-            p.x -= gameSpeed;
-            if (bird.x < p.x + 100 && bird.x + bird.w > p.x && (bird.y < p.top || bird.y + bird.h > p.top + p.gap)) handleCollision();
-            if (p.x + 100 < bird.x && !p.passed) { p.passed = true; score++; }
-        });
-
-        items.forEach((it, i) => {
-            it.y += 2.0; it.x -= gameSpeed * 0.5;
-            if (bird.x < it.x + it.w && bird.x + bird.w > it.x && bird.y < it.y + it.h && bird.y + bird.h > it.y) {
-                if (it.type === 'food') { bird.state = 'happy'; gameSpeed = 1.0; }
-                else { bird.state = 'sad'; gameSpeed = 2.8; }
-                effectTimer = 180; items.splice(i, 1);
-            }
-        });
-
-        pipes = pipes.filter(p => p.x > -120);
-        
-        if (score >= 15 && pipes.length === 0) {
-            state = 'whiteout';
-            whiteOut.style.opacity = "1";
-            items = [];
-            setTimeout(() => { state = 'ending'; whiteOut.style.opacity = "0"; }, 1000);
-        }
-
-    } else if (state === 'ending') {
-        if (partner.x > 800) partner.x -= 3;
-        bird.x += (550 - bird.x) * 0.05;
-        bird.y += (350 - bird.y) * 0.05;
-        bird.state = 'happy';
-        
-        if (partner.x <= 805) {
-            partner.isCaged = false;
-            bird.y += Math.sin(frame * 0.1) * 10;
-            partner.y = bird.y;
-            partner.x = bird.x + 120;
-
-            if (frame % 800 === 0 && gameRunning) { 
-                gameRunning = false;
-                uiTitle.innerText = "MY HERO ❤️";
-                uiDesc.innerText = '"I love you the most, and i am so sorry Pujeshhh"';
-                uiBtns.innerHTML = `
-                    <button onclick="startGame()">Rescue Ach Again</button>
-                    <button class="alt" onclick="closeGame()">Call Ach and tell him I love you too</button>
-                `;
-                uiContainer.style.display = 'flex';
-            }
-        }
-    }
-    frame++;
+  // pillar number badge
+  if(!p.passed) {
+    ctx.fillStyle='rgba(0,0,0,0.55)';
+    ctx.beginPath(); ctx.roundRect(px+pw/2-18, p.top+p.gap/2-14, 36,28,8); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 16px Quicksand'; ctx.textAlign='center';
+    ctx.fillText(idx+1, px+pw/2, p.top+p.gap/2+6);
+  }
 }
 
-function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (state === 'ending') drawCastle(partner.x - 100, partner.castleY);
+// ── HUD ────────────────────────────────────────────────────────────
+function drawHUD() {
+  // Score pill
+  ctx.fillStyle='rgba(0,0,0,0.55)';
+  ctx.beginPath(); ctx.roundRect(W/2-80,18,160,54,30); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.font='bold 30px "Baloo 2"'; ctx.textAlign='center';
+  ctx.fillText(`${score} / 15`, W/2, 56);
 
-    items.forEach(it => ctx.drawImage(images[it.type], it.x, it.y, it.w, it.h));
-    pipes.forEach(p => {
-        ctx.fillStyle = "#1e293b";
-        ctx.fillRect(p.x, 0, 100, p.top);
-        ctx.fillRect(p.x, p.top + p.gap, 100, canvas.height - (p.top + p.gap));
-    });
+  // Lives
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.beginPath(); ctx.roundRect(24,18,lives===2?110:70,50,25); ctx.fill();
+  ctx.font='28px serif'; ctx.textAlign='left';
+  let hx=36;
+  for(let i=0;i<lives;i++){ctx.fillText('💙',hx,56); hx+=40;}
 
-    if (state === 'ending') {
-        if (partner.isCaged) {
-            ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 4;
-            ctx.strokeRect(partner.x - 5, partner.y - 5, partner.w + 10, partner.h + 10);
-        }
-        ctx.drawImage(images.partner, partner.x, partner.y, partner.w, partner.h);
-        if (!partner.isCaged) {
-            ctx.fillStyle = "#ec4899"; ctx.font = "60px Arial";
-            ctx.fillText("❤️", (bird.x + partner.x)/2 + 10, bird.y - 40);
-        }
-    }
+  // Speed indicator
+  const spPct = Math.min(1,(gameSpeed-1.7)/(3.5-1.7));
+  ctx.fillStyle='rgba(0,0,0,0.5)';
+  ctx.beginPath(); ctx.roundRect(W-180,18,156,50,25); ctx.fill();
+  ctx.font='14px Quicksand'; ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.textAlign='left';
+  ctx.fillText('SPEED',W-168,39);
+  ctx.fillStyle='rgba(255,255,255,0.15)';
+  ctx.fillRect(W-168,44,130,8);
+  const speedCol=spPct<0.4?'#4ade80':spPct<0.7?'#facc15':'#f87171';
+  ctx.fillStyle=speedCol; ctx.fillRect(W-168,44,130*spPct,8);
 
-    ctx.save();
-    ctx.translate(bird.x + bird.w/2, bird.y + bird.h/2);
-    ctx.rotate(bird.angle);
-    if (!(invincibilityTimer > 0 && Math.floor(frame / 5) % 2 === 0)) {
-        ctx.drawImage(images[bird.state], -bird.w/2, -bird.h/2, bird.w, bird.h);
-    }
-    ctx.restore();
+  // Effect banner
+  if(effectTimer>0) {
+    const alpha=Math.min(1,effectTimer/30);
+    ctx.globalAlpha=alpha;
+    const isFood=bird.state==='happy';
+    ctx.fillStyle=isFood?'rgba(22,101,52,0.8)':'rgba(127,29,29,0.8)';
+    ctx.beginPath(); ctx.roundRect(W/2-140,82,280,42,22); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.font='bold 19px Quicksand'; ctx.textAlign='center';
+    ctx.fillText(isFood?'🍔  Slowed down!':'⚡  Speeding up!', W/2, 110);
+    ctx.globalAlpha=1;
+  }
 
-    // HUD Scaling for Mobile
-    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+  // Combo flash
+  if(comboFlash>0) {
+    ctx.globalAlpha=comboFlash/20;
+    ctx.fillStyle=flashCol;
+    ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha=1;
+    comboFlash--;
+  }
+}
+
+// ── Item drop ──────────────────────────────────────────────────────
+function drawItem(it) {
+  it.wobble=(it.wobble||0)+0.08;
+  const yo=Math.sin(it.wobble)*5;
+  const col=it.type==='food'?'rgba(74,222,128,0.5)':'rgba(248,113,113,0.5)';
+  ctx.shadowColor=col; ctx.shadowBlur=22;
+  const img=it.type==='food'?Img.food:Img.obstacle;
+  if(img.complete&&img.naturalWidth>0) ctx.drawImage(img,it.x,it.y+yo,it.w,it.h);
+  else {
+    ctx.fillStyle=it.type==='food'?'#4ade80':'#f87171';
+    ctx.beginPath(); ctx.arc(it.x+it.w/2,it.y+yo+it.h/2,it.w/2,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
+}
+
+// ── Bird trail ────────────────────────────────────────────────────
+function updateTrail() {
+  // 1. Add current position to the trail
+  bird.trail.push({x: bird.x + bird.w/2, y: bird.y + bird.h/2});
+
+  // 2. Keep the trail length manageable
+  if(bird.trail.length > 12) bird.trail.shift();
+
+  // 3. Draw each point in the trail
+  bird.trail.forEach((pt, i) => {
+    // Calculate transparency (fades out)
+    const a = (i / bird.trail.length) * 0.35;
+    
+    // Pick RGB values based on Puj's mood
+    let rgb = '147, 197, 253'; // Default blue
+    if (bird.state === 'happy') rgb = '74, 222, 128'; // Green
+    if (bird.state === 'sad')   rgb = '248, 113, 113'; // Red
+    
+    ctx.fillStyle = `rgba(${rgb}, ${a})`;
+    
+    // Calculate size (gets smaller further back)
+    const r = 8 * (i / bird.trail.length);
+    
     ctx.beginPath();
-    ctx.roundRect(40, 40, 240, 100, 20);
+    ctx.arc(pt.x, pt.y, r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = "#1e293b";
-    ctx.font = "bold 24px 'Quicksand'";
-    ctx.fillText(`Pillars: ${score}/15`, 65, 80);
-    ctx.fillText(`Lives: `, 65, 115);
-    let hX = 140;
-    for(let i=0; i<lives; i++) { ctx.fillText("❤️", hX, 115); hX += 35; }
+  });
 }
 
-function animate() {
-    update();
-    draw();
-    animationId = requestAnimationFrame(animate);
+
+// ── Draw bird ─────────────────────────────────────────────────────
+function drawBird() {
+  const targetAngle=Math.max(-0.45,Math.min(1.2,bird.vel*0.06));
+  bird.angle+=(targetAngle-bird.angle)*0.2;
+  if(bird.wobble>0){bird.angle+=Math.sin(frame*0.6)*(bird.wobble*0.04); bird.wobble*=0.88;}
+
+  const blink = invincTimer>0 && Math.floor(frame/5)%2===0;
+  if(blink) return;
+
+  ctx.save();
+  ctx.translate(bird.x+bird.w/2, bird.y+bird.h/2);
+  ctx.rotate(bird.angle);
+
+  // glow
+  const glowCol=bird.state==='happy'?'rgba(74,222,128,0.6)':bird.state==='sad'?'rgba(248,113,113,0.6)':'rgba(147,197,253,0.5)';
+  ctx.shadowColor=glowCol; ctx.shadowBlur=28;
+
+  const img=Img[bird.state]||Img.normal;
+  if(img.complete&&img.naturalWidth>0) ctx.drawImage(img,-bird.w/2,-bird.h/2,bird.w,bird.h);
+  else {
+    ctx.fillStyle='#facc15'; ctx.beginPath(); ctx.arc(0,0,bird.w/2,0,Math.PI*2); ctx.fill();
+  }
+  ctx.shadowBlur=0;
+  ctx.restore();
 }
+
+// ── Parallax scroll ────────────────────────────────────────────────
+function scrollBg() {
+  bgX-=gameSpeed*0.55;
+  bgXMid-=gameSpeed*0.3;
+  if(bgX<=-1200) bgX=0;
+  bgLayer.style.transform=`translateX(${bgX}px)`;
+
+  // scroll star canvas
+  starCvs.style.transform=`translateX(${bgXMid*0.4}px)`;
+}
+
+// ── Update ─────────────────────────────────────────────────────────
+function update() {
+  if(!gameRunning) return;
+  scrollBg();
+  updateShake();
+
+  if(state==='playing') {
+    bird.vel+=0.17;
+    bird.y+=bird.vel;
+    if(invincTimer>0) invincTimer--;
+    if(effectTimer>0) {
+      effectTimer--;
+      if(effectTimer<=0){ bird.state='normal'; gameSpeed=Math.max(1.7,gameSpeed); }
+    }
+
+    // Bounds
+    if(bird.y+bird.h>H || bird.y<0) handleCollision();
+
+// Spawn pipes: Increased difficulty version
+    const totalPipesEver = pipes.length + score; 
+    if(totalPipesEver < 15 && frame % 260 === 90) { // Spawns faster (220 vs 290)
+      const top = Math.random() * 400 + 70;         // More vertical variety
+      pipes.push({
+        x: W + 10, 
+        top: top, 
+        gap: 230,                                  // Tighter gap (210 vs 255)
+        passed: false
+      });
+    }
+
+    // Spawn items
+    if(frame%200===100) {
+      items.push({x:Math.random()*700+250, y:-80, type:Math.random()>0.5?'food':'obstacle', w:68, h:68, wobble:0});
+    }
+
+    // Update pipes
+    for(let i=pipes.length-1;i>=0;i--) {
+      pipes[i].x-=gameSpeed;
+      const p=pipes[i], bx2=bird.x, by2=bird.y, bw=bird.w, bh=bird.h;
+      const s=10; // shrink hitbox
+      const botY=p.top+p.gap;
+      // top pipe collision
+      if(bx2+s<p.x+100&&bx2+bw-s>p.x&&by2+s<p.top) handleCollision();
+      // bottom pipe collision
+      if(bx2+s<p.x+100&&bx2+bw-s>p.x&&by2+bh-s>botY) handleCollision();
+
+      if(p.x+100<bird.x&&!p.passed) {
+        p.passed=true; score++;
+        comboFlash=15; flashCol='rgba(255,255,255,0.12)';
+        spawnParticles(p.x+50,H/2,'rgba(255,215,80,0.8)',8);
+      }
+      if(p.x<-120) pipes.splice(i,1);
+    }
+
+    // Update items
+    for(let i=items.length-1;i>=0;i--) {
+      const it=items[i];
+      it.y+=1.8; it.x-=gameSpeed*0.4;
+      if(bird.x<it.x+it.w&&bird.x+bird.w>it.x&&bird.y<it.y+it.h&&bird.y+bird.h>it.y) {
+        if(it.type==='food') {
+          bird.state='happy'; gameSpeed=Math.max(1.0,gameSpeed-1.0);
+          spawnParticles(it.x+it.w/2,it.y+it.h/2,'rgba(74,222,128,0.9)',14);
+        } else {
+          bird.state='sad'; gameSpeed=Math.min(4.2,gameSpeed+1.5);
+          shake(10);
+          spawnParticles(it.x+it.w/2,it.y+it.h/2,'rgba(248,113,113,0.9)',14);
+        }
+        effectTimer=200; items.splice(i,1); continue;
+      }
+      if(it.y>H+80||it.x<-100) items.splice(i,1);
+    }
+
+    // Win condition: all 15 passed and no pipes left on screen
+    if(score>=15 && pipes.length===0) {
+      state='whiteout'; items=[];
+      whiteOut.style.opacity='1';
+      setTimeout(()=>{ state='ending'; whiteOut.style.opacity='0'; },1000);
+    }
+
+  } else if(state==='ending') {
+    // Partner glides in
+    if(partner.x>760) partner.x-=2.5;
+    // Bird glides to centre
+    bird.x+=(520-bird.x)*0.04;
+    bird.y+=(320-bird.y)*0.04;
+    bird.state='happy'; bird.vel=0;
+
+    if(partner.x<=765) {
+      partner.isCaged=false;
+      // Float together
+      const ft=Math.sin(frame*0.06)*18;
+      bird.y=320+ft;
+      partner.y=bird.y;
+      partner.x=bird.x+110;
+
+      // Spawn hearts periodically
+      if(frame%30===0) spawnHearts(bird.x+bird.w/2+55, bird.y-10, 3);
+
+      if(frame%900===0 && gameRunning) {
+        gameRunning=false;
+        showMenu(
+          '💙','HEHE!',
+          '"I love you the most, and I am so sorry Pujeshhh 💙"',
+          `<button onclick="startGame()">Rescue Ach Again 🏰</button>
+           <button class="alt" onclick="closeGame()">Call Ach &amp; say I love you 📞</button>`,
+          ''
+        );
+      }
+    }
+  }
+  frame++;
+}
+
+// ── Draw ──────────────────────────────────────────────────────────
+function draw() {
+  ctx.save();
+  ctx.translate(shakeX, shakeY);
+  ctx.clearRect(-10,-10,W+20,H+20);
+
+  // Ground strip
+  const gg=ctx.createLinearGradient(0,H-40,0,H);
+  gg.addColorStop(0,'#1a3a1a'); gg.addColorStop(1,'#0a1a0a');
+  ctx.fillStyle=gg; ctx.fillRect(0,H-40,W,40);
+  ctx.fillStyle='rgba(74,222,128,0.2)'; ctx.fillRect(0,H-42,W,3);
+
+  // Castle (in ending)
+  if(state==='ending') drawCastle(partner.x-90, 350);
+
+  // Pipes
+  pipes.forEach((p,i)=>drawPipe(p,i+score));
+
+  // Items
+  items.forEach(drawItem);
+
+  // Bird trail
+  updateTrail();
+
+  // Partner (in ending)
+  if(state==='ending') {
+    if(partner.isCaged) {
+      ctx.strokeStyle='#94a3b8'; ctx.lineWidth=3;
+      ctx.strokeRect(partner.x-4, partner.y-4, partner.w+8, partner.h+8);
+      for(let i=0;i<=partner.w;i+=18) {
+        ctx.beginPath(); ctx.moveTo(partner.x+i,partner.y-4);
+        ctx.lineTo(partner.x+i,partner.y+partner.h+4); ctx.stroke();
+      }
+    }
+    const pImg=Img.partner;
+    if(pImg.complete&&pImg.naturalWidth>0) ctx.drawImage(pImg,partner.x,partner.y,partner.w,partner.h);
+    else {
+      ctx.fillStyle='#f9ca24'; ctx.beginPath(); ctx.arc(partner.x+partner.w/2,partner.y+partner.h/2,partner.w/2,0,Math.PI*2); ctx.fill();
+    }
+    if(!partner.isCaged) {
+      ctx.font='48px serif'; ctx.textAlign='center';
+      ctx.fillText('❤️',(bird.x+partner.x+partner.w)/2+10, bird.y-24);
+    }
+  }
+
+  // Particles
+  updateParticles();
+
+  // Bird
+  drawBird();
+
+  // HUD
+  if(state==='playing') drawHUD();
+
+  // Ending message
+  if(state==='ending' && !gameRunning) {
+    ctx.fillStyle='rgba(0,0,0,0.4)';
+    ctx.fillRect(0,0,W,H);
+  }
+
+  ctx.restore();
+}
+
+// ── Loop ──────────────────────────────────────────────────────────
+function animate() {
+  update();
+  draw();
+  animId=requestAnimationFrame(animate);
+}
+
+// Start idle animation
+animate();
 </script>
 </body>
 </html>
