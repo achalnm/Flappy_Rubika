@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flappy Pujesh</title>
+<title>Flappy Rubika</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Quicksand:wght@500;700&display=swap');
 
@@ -183,16 +183,16 @@ button.alt:active { box-shadow: 0 2px 0 var(--indigo-dark); }
 
   <div id="ui">
     <div class="menu-box" id="menu-content">
-      <span class="menu-emoji" id="ui-emoji">🐦</span>
-      <h1 id="ui-title">Flappy Pujesh</h1>
+      <span class="menu-emoji" id="ui-emoji">🐶</span>
+      <h1 id="ui-title">Flappy Rubika</h1>
       <p id="ui-desc">You better be playing this on your laptop<br><em>Reach the end, Byeaatchhh</em></p>
       <div class="btn-container" id="ui-btns">
-        <button onclick="startGame()">Shuru Maadana 🚀</button>
+        <button onclick="startGame()">LesGOOOO 🚀</button>
       </div>
       <div class="hint-row" id="ui-hints">
         <span class="hint-pill">SPACE to flap</span>
-        <span class="hint-pill">chicken wings = Slower</span>
-        <span class="hint-pill">Dictionary = Faster</span>
+        <span class="hint-pill">Chicken and Banana = Slower</span>
+        <span class="hint-pill">BATH, YUCK! = Faster</span>
         <span class="hint-pill">2 Lives</span>
       </div>
     </div>
@@ -355,7 +355,7 @@ function init() {
   pipes = [];
   items = [];
   frame=0; score=0; lives=2; invincTimer=0;
-  gameSpeed=3.0; bgX=0; bgXMid=0; effectTimer=0;
+  gameSpeed=4.0; bgX=0; bgXMid=0; effectTimer=0;
   state='playing'; gameRunning=true;
   shakeAmt=0; particles.length=0; comboFlash=0;
   whiteOut.style.opacity='0';
@@ -369,8 +369,8 @@ function startGame() {
 
 function closeGame() {
   uiEmoji.textContent='📞';
-  uiTitle.innerText='Go call him!';
-  uiDesc.innerHTML='(If he is already on the call, the scem)';
+  uiTitle.innerText='Call Ruby!';
+  uiDesc.innerHTML='(If you dont have her number, then... then idk, thanks for  playing ig)';
   uiBtns.innerHTML='';
   uiHints.innerHTML='';
 }
@@ -384,8 +384,8 @@ function handleCollision() {
   spawnParticles(bird.x+bird.w/2, bird.y+bird.h/2, '#ff5252', 18);
   if(lives<=0) {
     gameRunning=false;
-    showMenu('💀','FAILED!','"che che che, big waste only"',
-      `<button onclick="startGame()">Matthome try maadi 💪</button>`
+    showMenu('💀','FAILED!','"HOW DARES YOU NOT REACHES ZHE END!"',
+      `<button onclick="startGame()">RUBY NEVER GIVES UP!</button>`
     );
   } else {
     invincTimer=120;
@@ -519,7 +519,7 @@ function drawHUD() {
   for(let i=0;i<lives;i++){ctx.fillText('💙',hx,56); hx+=40;}
 
   // Speed indicator
-  const spPct = Math.min(1,(gameSpeed-1.7)/(3.5-1.7));
+  const spPct = Math.min(1,(gameSpeed-2.5)/(3.5-2.5));
   ctx.fillStyle='rgba(0,0,0,0.5)';
   ctx.beginPath(); ctx.roundRect(W-180,18,156,50,25); ctx.fill();
   ctx.font='14px Quicksand'; ctx.fillStyle='rgba(255,255,255,0.6)'; ctx.textAlign='left';
@@ -537,7 +537,7 @@ function drawHUD() {
     ctx.fillStyle=isFood?'rgba(22,101,52,0.8)':'rgba(127,29,29,0.8)';
     ctx.beginPath(); ctx.roundRect(W/2-140,82,280,42,22); ctx.fill();
     ctx.fillStyle='#fff'; ctx.font='bold 19px Quicksand'; ctx.textAlign='center';
-    ctx.fillText(isFood?'🍔  Slowed down!':'⚡  Speeding up!', W/2, 110);
+    ctx.fillText(isFood?'FOOOD! Game EZZZ':'EWWW BATH! RUNNN', W/2, 110);
     ctx.globalAlpha=1;
   }
 
@@ -735,9 +735,9 @@ function update() {
         gameRunning=false;
         showMenu(
           '💙','HEHE!',
-          '"I love you the most, and I am so sorry Pujeshhh 💙"',
-          `<button onclick="startGame()">Rescue Ach Again 🏰</button>
-           <button class="alt" onclick="closeGame()">Call Ach &amp; say I love you 📞</button>`,
+          '"RUBY ISSA HAPPY💙"',
+          `<button onclick="startGame()">Rescue Pujesh Again </button>
+           <button class="alt" onclick="closeGame()">Stop playing and give Ruby more treats</button>`,
           ''
         );
       }
