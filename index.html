@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Puj</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&display=swap');
+
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: #0f172a; 
+            font-family: 'Quicksand', sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+        }
+        #game-container {
+            position: relative;
+            box-shadow: 0 50px 100px rgba(0,0,0,0.9);
+            border-radius: 30px;
+            overflow: hidden;
+            border: 12px solid #ffffff10;
+            width: 1200px;
+            height: 800px;
+        }
+        #bg-layer {
+            position: absolute;
+            top: 0; left: 0; width: 2400px; height: 800px;
+            background-image: url('Pics/background.jpg');
+            background-repeat: repeat-x;
+            background-size: 1200px 800px;
+            filter: blur(12px) saturate(0.6) contrast(0.8) brightness(0.9);
+            z-index: 0;
+        }
+        canvas { position: absolute; top: 0; left: 0; display: block; z-index: 1; }
+        #white-out {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; z-index: 5;
+            pointer-events: none; transition: opacity 0.8s ease-in-out;
+        }
+        #ui { 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            display: flex; justify-content: center; align-items: center; 
+            z-index: 10; pointer-events: none;
+        }
+        .menu-box { 
+            background: rgba(255, 255, 255, 0.98); 
+            padding: 50px; border-radius: 50px; pointer-events: auto; 
+            text-align: center; border: 2px solid #fce7f3; color: #1e293b;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.4);
+            min-width: 500px;
+        }
+        .btn-container { display: flex; flex-direction: column; gap: 15px; align-items: center; margin-top: 20px; }
+        button { 
+            padding: 18px 40px; font-size: 22px; cursor: pointer; background: #ec4899; 
+            color: white; border: none; border-radius: 100px; font-weight: 700; 
+            box-shadow: 0 6px 0 #be185d; transition: 0.1s; font-family: 'Quicksand', sans-serif;
+            width: 90%;
+        }
+        button.alt { background: #6366f1; box-shadow: 0 6px 0 #4338ca; }
+        button:active { transform: translateY(4px); box-shadow: 0 2px 0 #be185d; }
+        h1 { margin: 0; font-size: 55px; color: #db2777; }
+        p { color: #64748b; font-size: 20px; margin: 10px 0; line-height: 1.4; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="bg-layer"></div>
+        <div id="white-out"></div>
+        <div id="ui">
+            <div class="menu-box" id="menu-content">
+                <h1 id="ui-title">Flappy Puj</h1>
+                <p id="ui-desc">Reach the end, Byeaatchh</p>
+                <div class="btn-container" id="ui-btns">
+                    <button onclick="startGame()">Shuru Maadana</button>
+                </div>
+            </div>
+        </div>
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const whiteOut = document.getElementById('white-out');
+const bgLayer = document.getElementById('bg-layer');
+const uiContainer = document.getElementById('ui');
+const uiTitle = document.getElementById('ui-title');
+const uiDesc = document.getElementById('ui-desc');
+const uiBtns = document.getElementById('ui-btns');
+
+canvas.width = 1200;
+canvas.height = 800;
+
+const images = {};
+const src = {
+    normal: 'Pics/pujnormal.png', happy: 'Pics/pujhappy.png', sad: 'Pics/pujsad.png',
+    food: 'Pics/food1.png', obstacle: 'Pics/obstacle.png', partner: 'Pics/ach.png'
+};
+
+for (let key in src) {
+    images[key] = new Image();
+    images[key].src = src[key];
+}
+
+let bird, partner, pipes, items, frame, score, gameRunning, gameSpeed, lives, invincibilityTimer, state, bgX, wobble, effectTimer;
+let animationId;
+
+function init() {
+    bird = { x: 200, y: 400, w: 90, h: 90, velocity: 0, state: 'normal', angle: 0 };
+    partner = { x: 1400, y: 350, w: 95, h: 95, isCaged: true, castleY: 450 };
+    pipes = [];
+    items = [];
+    frame = 0;
+    score = 0;
+    lives = 2;
+    invincibilityTimer = 0;
+    gameSpeed = 1.7;
+    bgX = 0;
+    wobble = 0;
+    effectTimer = 0;
+    state = 'playing';
+    gameRunning = true;
+    whiteOut.style.opacity = "0";
+    uiContainer.style.display = 'none';
+}
+
+function startGame() {
+    if (animationId) cancelAnimationFrame(animationId);
+    init();
+    animate();
+}
+
+function closeGame() {
+    window.close();
+    // Fallback if window.close is blocked by browser
+    uiTitle.innerText = "❤️";
+    uiDesc.innerText = "Go give him a call! :)";
+    uiBtns.innerHTML = "";
+}
+
+function handleCollision() {
+    if (invincibilityTimer > 0 || state !== 'playing') return;
+    lives--;
+    bird.state = 'sad';
+    if (lives <= 0) {
+        gameRunning = false;
+        uiTitle.innerText = "FAILED";
+        uiDesc.innerText = '"che che che, big waste only"';
+        uiBtns.innerHTML = `<button onclick="startGame()">Try Again</button>`;
+        uiContainer.style.display = 'flex';
+    } else {
+        invincibilityTimer = 100;
+    }
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        e.preventDefault(); 
+        if (gameRunning && state === 'playing') {
+            bird.velocity = -4.8;
+            wobble = 15;
+        }
+    }
+});
+
+function drawCastle(x, y) {
+    ctx.fillStyle = "#475569";
+    ctx.fillRect(x, y, 300, 400);
+    ctx.fillRect(x - 20, y, 40, 60);
+    ctx.fillRect(x + 280, y, 40, 60);
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(x + 50, y + 100, 40, 60);
+    ctx.fillRect(x + 210, y + 100, 40, 60);
+}
+
+function update() {
+    if (!gameRunning && state === 'playing') return;
+
+    // Background stops during whiteout/ending
+    if (state === 'playing') {
+        bgX -= (gameSpeed * 0.7);
+        if (bgX <= -1200) bgX = 0;
+        bgLayer.style.transform = `translateX(${bgX}px)`;
+    }
+
+    if (wobble > 0) {
+        bird.angle = Math.sin(frame * 0.5) * (wobble * 0.05);
+        wobble *= 0.9; 
+    } else { bird.angle = 0; }
+
+    if (state === 'playing') {
+        bird.velocity += 0.16;
+        bird.y += bird.velocity;
+        
+        if (invincibilityTimer > 0) invincibilityTimer--;
+        if (effectTimer > 0) {
+            effectTimer--;
+            if (effectTimer <= 0) { bird.state = 'normal'; gameSpeed = 1.7; }
+        }
+
+        if (bird.y + bird.h > canvas.height || bird.y < 0) handleCollision();
+
+        // Stop spawning pipes once 15 are on screen or scored
+        if (score + pipes.length < 15 && frame % 280 === 0) {
+            pipes.push({ x: canvas.width, top: Math.random() * 300 + 100, gap: 270, passed: false });
+        }
+
+        if (frame % 180 === 0) {
+            items.push({ x: Math.random() * 800 + 200, y: -100, type: Math.random() > 0.5 ? 'food' : 'obstacle', w: 70, h: 70 });
+        }
+
+        pipes.forEach(p => {
+            p.x -= gameSpeed;
+            if (bird.x < p.x + 100 && bird.x + bird.w > p.x && (bird.y < p.top || bird.y + bird.h > p.top + p.gap)) handleCollision();
+            if (p.x + 100 < bird.x && !p.passed) { p.passed = true; score++; }
+        });
+
+        items.forEach((it, i) => {
+            it.y += 2.0; it.x -= gameSpeed * 0.5;
+            if (bird.x < it.x + it.w && bird.x + bird.w > it.x && bird.y < it.y + it.h && bird.y + bird.h > it.y) {
+                if (it.type === 'food') { bird.state = 'happy'; gameSpeed = 1.0; }
+                else { bird.state = 'sad'; gameSpeed = 2.8; }
+                effectTimer = 180; items.splice(i, 1);
+            }
+        });
+
+        pipes = pipes.filter(p => p.x > -120);
+        
+        // Exact 15th pillar trigger
+        if (score >= 15 && pipes.length === 0) {
+            state = 'whiteout';
+            whiteOut.style.opacity = "1";
+            items = [];
+            setTimeout(() => { 
+                state = 'ending'; 
+                whiteOut.style.opacity = "0"; 
+            }, 1000);
+        }
+
+    } else if (state === 'ending') {
+        if (partner.x > 800) partner.x -= 3;
+        bird.x += (550 - bird.x) * 0.05;
+        bird.y += (350 - bird.y) * 0.05;
+        bird.state = 'happy';
+        
+        if (partner.x <= 805) {
+            partner.isCaged = false;
+            bird.y += Math.sin(frame * 0.1) * 10;
+            partner.y = bird.y;
+            partner.x = bird.x + 120;
+
+            if (frame % 800 === 0 && gameRunning) { 
+                gameRunning = false;
+                uiTitle.innerText = "MY HERO ❤️";
+                uiDesc.innerText = '"I love you the most, and i am so sorry Pujeshhh"';
+                uiBtns.innerHTML = `
+                    <button onclick="startGame()">Rescue Ach Again</button>
+                    <button class="alt" onclick="closeGame()">Call Ach and tell him I love you too</button>
+                `;
+                uiContainer.style.display = 'flex';
+            }
+        }
+    }
+    frame++;
+}
+
+function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    if (state === 'ending') drawCastle(partner.x - 100, partner.castleY);
+
+    items.forEach(it => ctx.drawImage(images[it.type], it.x, it.y, it.w, it.h));
+    pipes.forEach(p => {
+        ctx.fillStyle = "#1e293b";
+        ctx.fillRect(p.x, 0, 100, p.top);
+        ctx.fillRect(p.x, p.top + p.gap, 100, canvas.height - (p.top + p.gap));
+    });
+
+    if (state === 'ending') {
+        if (partner.isCaged) {
+            ctx.strokeStyle = "#94a3b8"; ctx.lineWidth = 4;
+            ctx.strokeRect(partner.x - 5, partner.y - 5, partner.w + 10, partner.h + 10);
+            for(let i=0; i<partner.w; i+=20) {
+                ctx.beginPath(); ctx.moveTo(partner.x+i, partner.y-5); ctx.lineTo(partner.x+i, partner.y+partner.h+5); ctx.stroke();
+            }
+        }
+        ctx.drawImage(images.partner, partner.x, partner.y, partner.w, partner.h);
+        if (!partner.isCaged) {
+            ctx.fillStyle = "#ec4899"; ctx.font = "60px Arial";
+            ctx.fillText("❤️", (bird.x + partner.x)/2 + 10, bird.y - 40);
+        }
+    }
+
+    ctx.save();
+    ctx.translate(bird.x + bird.w/2, bird.y + bird.h/2);
+    ctx.rotate(bird.angle);
+    if (!(invincibilityTimer > 0 && Math.floor(frame / 5) % 2 === 0)) {
+        ctx.drawImage(images[bird.state], -bird.w/2, -bird.h/2, bird.w, bird.h);
+    }
+    ctx.restore();
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+    ctx.beginPath();
+    ctx.roundRect(40, 40, 240, 100, 20);
+    ctx.fill();
+    ctx.fillStyle = "#1e293b";
+    ctx.font = "bold 24px 'Quicksand'";
+    ctx.fillText(`Pillars: ${score}/15`, 65, 80);
+    ctx.fillText(`Lives: `, 65, 115);
+    let hX = 140;
+    for(let i=0; i<lives; i++) { ctx.fillText("❤️", hX, 115); hX += 35; }
+}
+
+function animate() {
+    update();
+    draw();
+    animationId = requestAnimationFrame(animate);
+}
+</script>
+</body>
+</html>
