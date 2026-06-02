@@ -1,6 +1,6 @@
 # Flappy Rubika
 
-A browser game I made as a time-pass project during my bachelor's degree. No grand ambitions here. I wanted to see how far I could push Claude (the AI) on a fun idea, and this is what came out. The whole thing was a test of what Claude could build from scratch, and honestly the result was way more polished than I expected.
+A browser game I made as a time-pass project during my MSc. No grand ambitions here. I wanted to see how far I could push Claude on a fun idea, and this is what came out. The whole thing was a test of what Claude could build from scratch, and honestly the result was way more polished than I expected.
 
 The game itself is a personalised gift for a friend. The bird and the obstacles use custom photos of real people and real things instead of generic sprites. It runs entirely in the browser with zero dependencies.
 
